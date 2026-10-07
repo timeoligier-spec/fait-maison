@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#1c1917" />
+<title>Fait Maison — Scan & Avis</title>
+<style>
+  :root {
+    --bg: #faf9f7; --card: #ffffff; --ink: #1c1917; --muted: #78716c;
+    --line: #e7e5e4; --green: #059669; --green-bg: #ecfdf5;
+    --orange: #ea580c; --orange-bg: #fff7ed; --amber: #f59e0b; --brand: #b45309;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--ink); min-height: 100vh;
+    padding-bottom: 84px; -webkit-tap-highlight-color: transparent; }
+  header { position: sticky; top: 0; z-index: 10;
+    background: rgba(250,249,247,.92); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line); padding: 14px 16px 10px; text-align: center; }
+  header h1 { font-size: 20px; letter-spacing: .3px; }
+  header p { font-size: 12px; color: var(--muted); }
+  main { max-width: 560px; margin: 0 auto; padding: 14px 14px 20px; }
+  .card { background: var(--card); border: 1px solid var(--line);
+    border-radius: 14px; padding: 14px; margin-bottom: 12px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+  .card h2 { font-size: 15px; margin-bottom: 8px; }
+  .muted { color: var(--muted); font-size: 12.5px; line-height: 1.45; }
+  .tabs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;
+    position: fixed; bottom: 0; left: 0; right: 0; background: var(--card);
+    border-top: 1px solid var(--line); padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+    max-width: 560px; margin: 0 auto; }
+  .tab { border: none; background: none; font-size: 11px; color: var(--muted);
+    padding: 6px 2px; border-radius: 10px; cursor: pointer; display: flex;
+    flex-direction: column; align-items: center; gap: 3px; font-family: inherit; }
+  .tab .ico { font-size: 20px; }
+  .tab.active { color: var(--brand); background: #fef3e2; }
+  button.btn { font-family: inherit; border: none; cursor: pointer;
+    border-radius: 12px; padding: 11px 16px; font-size: 14px; font-weight: 600; }
+  .btn-primary { background: var(--brand); color: #fff; width: 100%; }
+  .btn-primary:active { transform: scale(.98); }
+  .btn-ghost { background: #f5f5f4; color: var(--ink); }
+  input, textarea, select { font-family: inherit; font-size: 14px; width: 100%;
+    border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px;
+    background: #fff; color: var(--ink); margin-bottom: 8px; }
+  input:focus, textarea:focus, select:focus { outline: 2px solid var(--brand); border-color: transparent; }
+  .stars { color: var(--amber); font-size: 16px; letter-spacing: 1px; }
+  .stars button { background: none; border: none; cursor: pointer; font-size: 20px;
+    color: #d6d3d1; padding: 0 1px; }
+  .stars button.on { color: var(--amber); }
+  .badge { display: inline-block; font-size: 11px; font-weight: 700;
+    padding: 3px 9px; border-radius: 999px; }
+  .badge.ok { background: var(--green-bg); color: var(--green); }
+  .badge.ko { background: var(--orange-bg); color: var(--orange); }
+  .row { display: flex; align-items: center; gap: 10px; }
+  .verdict-box { border-radius: 12px; padding: 12px 14px; margin: 10px 0; }
+  .verdict-box.ok { background: var(--green-bg); border: 1px solid #a7f3d0; }
+  .verdict-box.ko { background: var(--orange-bg); border: 1px solid #fed7aa; }
+  .verdict-box h3 { font-size: 16px; margin-bottom: 2px; }
+  .verdict-box.ok h3 { color: var(--green); }
+  .verdict-box.ko h3 { color: var(--orange); }
+  .meter { height: 8px; background: #e7e5e4; border-radius: 999px;
+    overflow: hidden; margin: 8px 0 4px; }
+  .meter > div { height: 100%; background: var(--brand); transition: width .3s; }
+  .review { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 10px; }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+    background: var(--brand); color: #fff; font-weight: 700; font-size: 14px;
+    display: flex; align-items: center; justify-content: center; }
+  .like-btn { background: none; border: none; color: var(--muted);
+    font-size: 12px; cursor: pointer; margin-top: 4px; font-family: inherit; }
+  .like-btn.liked { color: var(--brand); font-weight: 600; }
+  .img-capture { position: relative; border-radius: 12px; overflow: hidden; background: #000; }
+  .img-capture img, .img-capture video { width: 100%; display: block;
+    max-height: 320px; object-fit: cover; }
+  .scan-overlay { position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgba(180,83,9,.14) 0 2px, transparent 2px 7px); }
+  .scan-line { position: absolute; left: 8%; right: 8%; height: 2px;
+    background: var(--brand); box-shadow: 0 0 12px 3px rgba(180,83,9,.7);
+    animation: scanmove 1.1s linear infinite; }
+  @keyframes scanmove { from { top: 6%; } to { top: 94%; } }
+  .pill-toggle { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .pill-toggle button { border: 1px solid var(--line); background: #fff;
+    border-radius: 999px; padding: 5px 12px; font-size: 12px; cursor: pointer;
+    font-family: inherit; color: var(--muted); }
+  .pill-toggle button.on { background: var(--brand); color: #fff; border-color: var(--brand); }
+  .resto-emoji { font-size: 26px; width: 44px; height: 44px; background: #f5f5f4;
+    border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+  .toast { position: fixed; bottom: 96px; left: 50%; transform: translateX(-50%);
+    background: var(--ink); color: #fff; font-size: 13px; padding: 10px 18px;
+    border-radius: 999px; z-index: 50; opacity: 0; transition: opacity .3s;
+    pointer-events: none; white-space: nowrap; max-width: 92vw;
+    overflow: hidden; text-overflow: ellipsis; }
+  .toast.show { opacity: 1; }
+  .chart-bar { display: flex; align-items: center; gap: 8px; margin: 5px 0; font-size: 12px; }
+  .chart-bar .bar { flex: 1; height: 10px; background: #e7e5e4;
+    border-radius: 999px; overflow: hidden; }
+  .chart-bar .bar > div { height: 100%; background: var(--green); }
+  .chart-bar .lab { width: 110px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🍽️ Fait Maison</h1>
+  <p>Scanne ton plat, découvre s'il est fait maison, partage ton avis.</p>
+</header>
+
+<main id="app"></main>
+
+<div class="tabs">
+  <button class="tab active" data-tab="scan" onclick="goTab('scan')"><span class="ico">📷</span>Scanner</button>
+  <button class="tab" data-tab="restos" onclick="goTab('restos')"><span class="ico">🏪</span>Restaurants</button>
+  <button class="tab" data-tab="commu" onclick="goTab('commu')"><span class="ico">💬</span>Communauté</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+var LS = {
+  get: function (k, d) {
+    try { var v = localStorage.getItem("fm_" + k); return v ? JSON.parse(v) : d; }
+    catch (e) { return d; }
+  },
+  set: function (k, v) {
+    try { localStorage.setItem("fm_" + k, JSON.stringify(v)); } catch (e) {}
+  }
+};
+
+var CLE_PSEUDO = "pseudo";
+var CLE_AVIS = "avis";
+var CLE_SCANS = "scans";
+
+var RESTOS = [
+  { id: "r1", nom: "Chez Marcel", ville: "Paris 11e", emoji: "🍷", certifie: true },
+  { id: "r2", nom: "Le Petit Port", ville: "Marseille", emoji: "⚓", certifie: true },
+  { id: "r3", nom: "Resto Rapide Lyon", ville: "Lyon", emoji: "⚡", certifie: false },
+  { id: "r4", nom: "Bistrot du Marché", ville: "Bordeaux", emoji: "🧺", certifie: true },
+  { id: "r5", nom: "La Table de Jeanne", ville: "Lille", emoji: "🥖", certifie: false },
+  { id: "r6", nom: "Auberge du Vieux Pont", ville: "Albi", emoji: "🌿", certifie: true }
+];
+
+var AVIS_SEED = [
+  { id: 1, plat: "Bœuf bourguignon", resto: "r1", auteur: "Camille D.", note: 5, texte: "Un vrai bourguignon comme chez mamie !", likes: 14, date: "il y a 2 j" },
+  { id: 2, plat: "Bœuf bourguignon", resto: "r1", auteur: "Yanis B.", note: 4, texte: "Viande fondante, fait maison confirmé.", likes: 7, date: "il y a 5 j" },
+  { id: 3, plat: "Lasagnes bolognaise", resto: "r3", auteur: "Sarah L.", note: 2, texte: "Clairement surgelées réchauffées...", likes: 22, date: "il y a 1 j" },
+  { id: 4, plat: "Soupe à l'oignon", resto: "r4", auteur: "Karim T.", note: 5, texte: "La meilleure du quartier !", likes: 11, date: "il y a 3 j" },
+  { id: 5, plat: "Gnocchis parisienne", resto: "r3", auteur: "Éloïse R.", note: 1, texte: "Sortis d'un sachet, déçue.", likes: 19, date: "il y a 4 j" },
+  { id: 6, plat: "Tartare de saumon", resto: "r2", auteur: "Marc F.", note: 5, texte: "Découpe à la main, ultra frais.", likes: 8, date: "il y a 6 j" }
+];
+
+function getAvis() {
+  var a = LS.get(CLE_AVIS, null);
+  if (a === null) { a = AVIS_SEED; LS.set(CLE_AVIS, a); }
+  return a;
+}
+function setAvis(a) { LS.set(CLE_AVIS, a); }
+
+var etat = {
+  tab: "scan", photo: null, analyse: null,
+  scans: LS.get(CLE_SCANS, []), filtre: "tous",
+  avisAimes: LS.get("avis_aimes", []),
+  restoChoisi: "r1", platNom: ""
+};
+
+function toast(msg) {
+  var t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(t._h);
+  t._h = setTimeout(function () { t.classList.remove("show"); }, 2200);
+}
+
+function stars(n) {
+  n = Math.max(0, Math.min(5, Math.round(n)));
+  return "★★★★★☆☆☆☆☆".slice(5 - n, 10 - n);
+}
+
+function restosPar(id) {
+  for (var i = 0; i < RESTOS.length; i++) if (RESTOS[i].id === id) return RESTOS[i];
+  return { nom: "?", ville: "", emoji: "❓" };
+}
+
+var stream = null;
+
+function ouvrirCamera() {
+  etat.photo = null; etat.analyse = null; render();
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false })
+    .then(function (s) {
+      stream = s; render();
+      var v = document.getElementById("cam");
+      if (v) { v.srcObject = s; v.setAttribute("playsinline", "true"); v.play(); }
+    })
+    .catch(function () { toast("Caméra indisponible — mode test"); photoTest(); });
+}
+
+function fermerCamera() {
+  if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; }
+}
+
+function prendrePhoto() {
+  var v = document.getElementById("cam");
+  if (!v || !stream) { photoTest(); return; }
+  var c = document.createElement("canvas");
+  c.width = Math.min(v.videoWidth || 720, 900);
+  c.height = Math.min(v.videoHeight || 960, 1200);
+  if (c.width === 0 || c.height === 0) { photoTest(); return; }
+  c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
+  var url = c.toDataURL("image/jpeg", 0.8);
+  fermerCamera(); etat.photo = url; lancerAnalyse(url);
+}
+
+function photoTest() {
+  var c = document.createElement("canvas");
+  c.width = 400; c.height = 300;
+  var g = c.getContext("2d");
+  var seed = Date.now() % 1000;
+  for (var y = 0; y < 300; y += 6) {
+    for (var x = 0; x < 400; x += 6) {
+      var r = (Math.sin(x * .09 + seed) * .5 + .5) * 190 + 30;
+      var gg = (Math.cos(y * .07 + seed) * .5 + .5) * 150 + 30;
+      var b = (Math.sin((x + y) * .05 + seed) * .5 + .5) * 110 + 20;
+      g.fillStyle = "rgb(" + (r | 0) + "," + (gg | 0) + "," + (b | 0) + ")";
+      g.fillRect(x, y, 6, 6);
+    }
+  }
+  var url = c.toDataURL("image/jpeg", 0.8);
+  etat.photo = url; lancerAnalyse(url);
+}
+
+function analyserImage(url, cb) {
+  var img = new Image();
+  img.onload = function () {
+    var c = document.createElement("canvas");
+    var W = 160, H = Math.max(1, Math.round(img.height * (160 / img.width)));
+    c.width = W; c.height = H;
+    var g = c.getContext("2d");
+    g.drawImage(img, 0, 0, W, H);
+    var d = g.getImageData(0, 0, W, H).data;
+    var n = 0, lum = [];
+    for (var i = 0; i < d.length; i += 4) {
+      lum.push((d[i] * .3 + d[i + 1] * .59 + d[i + 2] * .11)); n++;
+    }
+    var variance = 0, lumMoy = lum.reduce(function (a, b) { return a + b; }, 0) / n;
+    for (var j = 0; j < n; j++) variance += Math.abs(lum[j] - lumMoy);
+    variance /= n;
+    var contours = 0;
+    for (var y = 1; y < H - 1; y++) {
+      for (var x = 1; x < W - 1; x++) {
+        var idx = (y * W + x);
+        var diff = Math.abs(lum[idx] - lum[idx + 1]) + Math.abs(lum[idx] - lum[idx + W]);
+        if (diff > 40) contours++;
+      }
+    }
+    var densiteContours = contours / (W * H);
+    var sat = 0;
+    for (var k = 0; k < d.length; k += 4) {
+      var mx = Math.max(d[k], d[k + 1], d[k + 2]), mn = Math.min(d[k], d[k + 1], d[k + 2]);
+      sat += mx === 0 ? 0 : (mx - mn) / mx;
+    }
+    sat /= n;
+    var score = Math.min(45, (variance / 26) * 45) +
+                Math.min(30, (densiteContours / 0.10) * 30) +
+                Math.min(25, (1 - Math.min(1, sat * 1.8)) * 25);
+    score = Math.max(5, Math.min(97, Math.round(score)));
+    var maison = score >= 55;
+    var indices = [];
+    if (variance > 14) indices.push("Irrégularité élevée : assemblage à la main détecté");
+    else indices.push("Surface très lisse : présentation calibrée suspecte");
+    if (densiteContours > 0.05) indices.push("Micro-variations : découpe manuelle probable");
+    else indices.push("Peu de détails fins : aspect moulé industriel");
+    if (sat < 0.45) indices.push("Couleurs sobres, sans excès d'additifs");
+    else indices.push("Couleurs vives : colorants possibles");
+    indices.push("Analyse locale — aucune donnée envoyée");
+    cb({ score: score, maison: maison, indices: indices,
+      stats: { variance: Math.round(variance * 10) / 10,
+        contours: Math.round(densiteContours * 1000) / 10,
+        saturation: Math.round(sat * 100) } });
+  };
+  img.src = url;
+}
+
+function lancerAnalyse(url) {
+  etat.analyse = "en-cours"; render();
+  var t0 = Date.now();
+  analyserImage(url, function (res) {
+    var attente = Math.max(0, 1200 - (Date.now() - t0));
+    setTimeout(function () {
+      etat.analyse = res;
+      etat.scans.unshift({
+        date: new Date().toISOString(),
+        plat: etat.platNom || "Plat scanné",
+        resto: etat.restoChoisi, score: res.score, maison: res.maison, photo: null
+      });
+      if (etat.scans.length > 40) etat.scans.pop();
+      LS.set(CLE_SCANS, etat.scans);
+      render();
+    }, attente);
+  });
+}
+
+function goTab(t) {
+  fermerCamera(); etat.tab = t; etat.photo = null; etat.analyse = null;
+  document.querySelectorAll(".tab").forEach(function (b) {
+    b.classList.toggle("active", b.dataset.tab === t);
+  });
+  render();
+}
+
+function render() {
+  var app = document.getElementById("app");
+  if (etat.tab === "scan") app.innerHTML = vueScan();
+  else if (etat.tab === "restos") app.innerHTML = vueRestos();
+  else app.innerHTML = vueCommu();
+}
+
+function vueScan() {
+  var h = "";
+  if (stream) {
+    return '<div class="card"><h2>2 · Cadre ton plat</h2>' +
+      '<div class="img-capture"><video id="cam"></video>' +
+      '<div class="scan-overlay"><div class="scan-line"></div></div></div>' +
+      '<div style="display:flex;gap:8px;margin-top:10px">' +
+      '<button class="btn btn-primary" onclick="prendrePhoto()">📸 Prendre la photo</button>' +
+      '<button class="btn btn-ghost" onclick="fermerCamera();render()">Annuler</button>' +
+      '</div></div>';
+  }
+  if (etat.analyse === "en-cours") {
+    return '<div class="card"><h2>🔍 Analyse en cours...</h2>' +
+      '<div class="img-capture"><img src="' + etat.photo + '">' +
+      '<div class="scan-overlay"><div class="scan-line"></div></div></div>' +
+      '<div class="meter"><div style="width:60%"></div></div>' +
+      '<p class="muted">Analyse locale en cours...</p></div>';
+  }
+  if (etat.analyse && typeof etat.analyse === "object") {
+    var a = etat.analyse, r = restosPar(etat.restoChoisi);
+    h += '<div class="card"><div class="img-capture"><img src="' + etat.photo + '"></div>' +
+      '<div class="verdict-box ' + (a.maison ? "ok" : "ko") + '">' +
+      '<h3>' + (a.maison ? "✅ Plutôt fait maison" : "⚠️ Probablement industriel") + '</h3>' +
+      '<span class="badge ' + (a.maison ? "ok" : "ko") + '">' + a.score + ' / 100</span>' +
+      '<div class="meter"><div style="width:' + a.score + '%"></div></div>' +
+      '<p class="muted">' + (etat.platNom || "Plat scanné") + ' · ' + r.nom + '</p>' +
+      '</div><h2 style="margin-top:6px">Indices détectés</h2><ul style="list-style:none">';
+    a.indices.forEach(function (i) {
+      h += '<li class="row" style="align-items:flex-start;margin:4px 0"><span>' +
+        (a.maison ? "🟢" : "🔴") + '</span><span class="muted" style="font-size:13px">' + i + '</span></li>';
+    });
+    h += '</ul></div>';
+    h += blocAvisPour(etat.platNom || "Plat scanné", etat.restoChoisi);
+    h += '<button class="btn btn-primary" onclick="etat.photo=null;etat.analyse=null;render()">📷 Nouveau scan</button>';
+    return h;
+  }
+  h += '<div class="card"><h2>1 · Que vas-tu manger ?</h2>' +
+    '<label class="muted">Nom du plat</label>' +
+    '<input id="in-plat" placeholder="Ex : Bœuf bourguignon" value="' + esc(etat.platNom) +
+    '" oninput="etat.platNom=this.value">' +
+    '<label class="muted">Restaurant</label><select onchange="etat.restoChoisi=this.value">';
+  RESTOS.forEach(function (r) {
+    h += '<option value="' + r.id + '"' + (r.id === etat.restoChoisi ? " selected" : "") +
+      '>' + r.emoji + ' ' + r.nom + ' — ' + r.ville + '</option>';
+  });
+  h += '</select><button class="btn btn-primary" onclick="ouvrirCamera()" style="margin-top:4px">' +
+    '📷 Scanner mon plat</button>' +
+    '<p class="muted" style="margin-top:8px">Analyse locale sur ton appareil.</p></div>';
+  if (etat.scans.length) {
+    h += '<div class="card"><h2>Historique de tes scans</h2>';
+    etat.scans.slice(0, 6).forEach(function (s) {
+      var rr = restosPar(s.resto);
+      h += '<div class="row" style="justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line)">' +
+        '<div><b style="font-size:13px">' + esc(s.plat) + '</b><br><span class="muted">' +
+        rr.nom + ' · ' + new Date(s.date).toLocaleDateString("fr-FR") + '</span></div>' +
+        '<span class="badge ' + (s.maison ? "ok" : "ko") + '">' + s.score + '</span></div>';
+    });
+    h += '</div>';
+  }
+  return h;
+}
+
+function vueRestos() {
+  var h = '<div class="card"><h2>🏪 Restaurants</h2><p class="muted">' +
+    'Le badge 🏅 « Fait maison certifié » est attribué aux établissements plébiscités.</p></div>';
+  RESTOS.forEach(function (r) {
+    var avis = getAvis().filter(function (a) { return a.resto === r.id; });
+    var moy = avis.length ? avis.reduce(function (s, a) { return s + a.note; }, 0) / avis.length : 0;
+    var maison = avis.filter(function (a) { return a.note >= 4; }).length;
+    var industriel = avis.filter(function (a) { return a.note <= 2; }).length;
+    h += '<div class="card"><div class="row"><div class="resto-emoji">' + r.emoji + '</div>' +
+      '<div style="flex:1"><b>' + esc(r.nom) + '</b> ' +
+      (r.certifie ? '<span class="badge ok">🏅 Certifié</span>' : "") + '<br>' +
+      '<span class="muted">' + r.ville + ' · ' + avis.length + ' avis</span><br>' +
+      '<span class="stars">' + stars(moy) + '</span> <span class="muted">' +
+      (avis.length ? moy.toFixed(1) : "—") + '</span></div></div>';
+    if (avis.length) {
+      h += '<div style="margin-top:8px">' +
+        '<div class="chart-bar"><span class="lab">🍽 Fait maison</span><div class="bar">' +
+        '<div style="width:' + (maison / avis.length * 100) + '%"></div></div><span class="muted">' +
+        maison + '</span></div>' +
+        '<div class="chart-bar"><span class="lab">⚠ Industriel</span><div class="bar">' +
+        '<div style="width:' + (industriel / avis.length * 100) + '%;background:var(--orange)"></div></div>' +
+        '<span class="muted">' + industriel + '</span></div></div>';
+    }
+    h += '</div>';
+  });
+  return h;
+}
+
+function vueCommu() {
+  var avis = getAvis();
+  var h = '<div class="card"><h2>💬 Communauté</h2>' +
+    '<div class="pill-toggle">' +
+    '<button class="' + (etat.filtre === "tous" ? "on" : "") + '" onclick="etat.filtre=\'tous\';render()">Tous</button>' +
+    '<button class="' + (etat.filtre === "maison" ? "on" : "") + '" onclick="etat.filtre=\'maison\';render()">✅ Fait maison</button>' +
+    '<button class="' + (etat.filtre === "bof" ? "on" : "") + '" onclick="etat.filtre=\'bof\';render()">⚠ Industriel</button>' +
+    '</div><label class="muted">Ton pseudo</label>' +
+    '<input id="in-pseudo" placeholder="Ex : Timéo" value="' + esc(LS.get(CLE_PSEUDO, "")) +
+    '" oninput="LS.set(CLE_PSEUDO,this.value)"></div>' +
+    '<div class="card"><h2>Donner mon avis</h2>' +
+    '<label class="muted">Plat</label><input id="av-plat" placeholder="Ex : Lasagnes">' +
+    '<label class="muted">Restaurant</label><select id="av-resto">';
+  RESTOS.forEach(function (r) {
+    h += '<option value="' + r.id + '">' + r.emoji + ' ' + r.nom + '</option>';
+  });
+  h += '</select><label class="muted">Note</label><div class="stars" id="av-stars" style="margin-bottom:10px">';
+  for (var n = 1; n <= 5; n++) h += '<button data-n="' + n + '" onclick="choisirNote(' + n + ')">★</button>';
+  h += '</div><textarea id="av-texte" rows="3" placeholder="Ton avis..."></textarea>' +
+    '<button class="btn btn-primary" onclick="publierAvis()">Publier mon avis</button></div>';
+  h += '<div class="card"><h2>Derniers avis</h2>';
+  var liste = avis.slice().reverse();
+  if (etat.filtre === "maison") liste = liste.filter(function (a) { return a.note >= 4; });
+  if (etat.filtre === "bof") liste = liste.filter(function (a) { return a.note <= 2; });
+  if (!liste.length) h += '<p class="muted">Aucun avis dans cette catégorie.</p>';
+  liste.forEach(function (a) {
+    var r = restosPar(a.resto);
+    var aime = etat.avisAimes.indexOf(a.id) >= 0;
+    h += '<div style="padding:10px 0;border-bottom:1px solid var(--line)">' +
+      '<div class="row"><div class="avatar">' + esc(a.auteur.charAt(0)) + '</div>' +
+      '<div style="flex:1;min-width:0"><b style="font-size:13px">' + esc(a.auteur) + '</b> ' +
+      '<span class="stars">' + stars(a.note) + '</span><br>' +
+      '<span class="muted" style="font-size:11.5px">' + esc(a.plat) + ' · ' + r.nom + ' · ' + a.date + '</span>' +
+      '<p style="font-size:13.5px;margin-top:3px">' + esc(a.texte) + '</p>' +
+      '<button class="like-btn' + (aime ? " liked" : "") + '" onclick="liker(' + a.id + ')">' +
+      '👍 Utile (' + a.likes + ')</button></div></div></div>';
+  });
+  h += '</div>';
+  return h;
+}
+
+var noteChoisie = 5;
+function choisirNote(n) {
+  noteChoisie = n;
+  document.querySelectorAll("#av-stars button").forEach(function (b) {
+    b.classList.toggle("on", parseInt(b.dataset.n) <= n);
+  });
+}
+
+function publierAvis() {
+  var plat = document.getElementById("av-plat").value.trim();
+  var texte = document.getElementById("av-texte").value.trim();
+  var p = LS.get(CLE_PSEUDO, "").trim() || "Anonyme";
+  if (!plat || !texte) { toast("Indique le plat et ton avis 🙂"); return; }
+  var avis = getAvis();
+  var maxId = avis.reduce(function (m, a) { return Math.max(m, a.id); }, 0);
+  avis.push({
+    id: maxId + 1, plat: plat, resto: document.getElementById("av-resto").value,
+    auteur: p, note: noteChoisie, texte: texte, likes: 0, date: "à l'instant"
+  });
+  setAvis(avis); toast("Merci pour ton avis ! 🎉"); render();
+}
+
+function liker(id) {
+  var avis = getAvis();
+  var aime = etat.avisAimes.indexOf(id) >= 0;
+  avis.forEach(function (a) { if (a.id === id) a.likes += aime ? -1 :
